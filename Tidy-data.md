@@ -218,3 +218,110 @@ return_king =
   readxl::read_excel("./data/LotR_Words.xlsx", range = "J3:L6") |>
   mutate(movie = "return_king")
 ```
+
+stack them up using `bind_rows`
+
+`relocate(movie)` put movie variable in the first column
+
+`select(movie, everything())` put movie variable in the first column
+
+``` r
+lotr_tidy = 
+  bind_rows(fellowship_ring, two_towers, return_king) |>
+  janitor::clean_names() |>
+  pivot_longer(
+    female:male,
+    names_to = "gender", 
+    values_to = "words") |>
+  mutate(race = str_to_lower(race)) |> 
+  select(movie, everything()) 
+
+lotr_tidy
+```
+
+    ## # A tibble: 18 × 4
+    ##    movie           race   gender words
+    ##    <chr>           <chr>  <chr>  <dbl>
+    ##  1 fellowship_ring elf    female  1229
+    ##  2 fellowship_ring elf    male     971
+    ##  3 fellowship_ring hobbit female    14
+    ##  4 fellowship_ring hobbit male    3644
+    ##  5 fellowship_ring man    female     0
+    ##  6 fellowship_ring man    male    1995
+    ##  7 two_towers      elf    female   331
+    ##  8 two_towers      elf    male     513
+    ##  9 two_towers      hobbit female     0
+    ## 10 two_towers      hobbit male    2463
+    ## 11 two_towers      man    female   401
+    ## 12 two_towers      man    male    3589
+    ## 13 return_king     elf    female   183
+    ## 14 return_king     elf    male     510
+    ## 15 return_king     hobbit female     2
+    ## 16 return_king     hobbit male    2673
+    ## 17 return_king     man    female   268
+    ## 18 return_king     man    male    2459
+
+## `Joining datasets`
+
+four major ways join dataframes x and y:
+
+-   Inner: keeps data that appear in both x and y
+-   Left: keeps data that appear in x
+-   Right: keeps data that appear in y
+-   Full: keeps data that appear in either x or y
+
+Revisit FAS
+
+`separate` separate the variable into 2 variables
+
+`case_match` make 1 stand for male and 2 stand for female
+
+`left_join` left join 2 datasets by some variable
+
+``` r
+litters_df=
+  read_csv("./data/FAS_litters.csv")|>
+  janitor::clean_names()|>
+  mutate(wt_gain=gd18_weight-gd0_weight)|>
+  select(litter_number,group,wt_gain)|>
+  separate(group,into=c("dose","day_of_tx"),)
+```
+
+    ## Rows: 49 Columns: 8
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (2): Group, Litter Number
+    ## dbl (6): GD0 weight, GD18 weight, GD of Birth, Pups born alive, Pups dead @ ...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+    ## Warning: Expected 2 pieces. Missing pieces filled with `NA` in 49 rows [1, 2, 3, 4, 5,
+    ## 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...].
+
+``` r
+pups_df=
+  read_csv("./data/FAS_pups.csv")|>
+  janitor::clean_names()|>
+  mutate(
+    sex=case_match(
+      sex,
+      1~"male",
+      2~"female"
+    )
+  )
+```
+
+    ## Rows: 313 Columns: 6
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (1): Litter Number
+    ## dbl (5): Sex, PD ears, PD eyes, PD pivot, PD walk
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+fas_df=
+  left_join(pups_df,litters_df,by="litter_number")
+```
