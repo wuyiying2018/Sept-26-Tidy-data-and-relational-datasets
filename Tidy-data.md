@@ -127,3 +127,94 @@ print(pulse_df, n = 12)
     ## 11 10022  58.5 male  06m       8
     ## 12 10022  58.5 male  12m      NA
     ## # ℹ 4,336 more rows
+
+**Learning Assessment:** In the litters data, the variables gd0_weight
+and gd18_weight give the weight of the mother mouse on gestational days
+0 and 18. Write a data cleaning chain that retains only litter_number
+and these columns; produces new variables gd and weight; and makes gd a
+numeric variable taking values 0 and 18 (for the last part, you might
+want to use recode …). Is this version “tidy”?
+
+`case_match`: replace gd0_weight with 0, replace gd18_weight with 18.
+Then change gd into numeric variable
+
+``` r
+litters_wide = 
+  read_csv("./data/FAS_litters.csv") |>
+  janitor::clean_names() |>
+  select(litter_number, ends_with("weight")) |> 
+  pivot_longer(
+    gd0_weight:gd18_weight,
+    names_to = "gd", 
+    values_to = "weight") |> 
+  mutate(
+    gd = case_match(
+      gd,
+      "gd0_weight"  ~ 0,
+      "gd18_weight" ~ 18
+    ))
+```
+
+    ## Rows: 49 Columns: 8
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (2): Group, Litter Number
+    ## dbl (6): GD0 weight, GD18 weight, GD of Birth, Pups born alive, Pups dead @ ...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+## `pivot_wider`
+
+``` r
+analysis_result = 
+  tibble(
+    group = c("treatment", "treatment", "placebo", "placebo"),
+    time = c("pre", "post", "pre", "post"),
+    mean = c(4, 8, 3.5, 4)
+  )
+
+analysis_result
+```
+
+    ## # A tibble: 4 × 3
+    ##   group     time   mean
+    ##   <chr>     <chr> <dbl>
+    ## 1 treatment pre     4  
+    ## 2 treatment post    8  
+    ## 3 placebo   pre     3.5
+    ## 4 placebo   post    4
+
+``` r
+pivot_wider(
+  analysis_result, 
+  names_from = "time", 
+  values_from = "mean")
+```
+
+    ## # A tibble: 2 × 3
+    ##   group       pre  post
+    ##   <chr>     <dbl> <dbl>
+    ## 1 treatment   4       8
+    ## 2 placebo     3.5     4
+
+use select to reorder columns, and (depending on your goal) use
+knitr::kable() to produce a nicer table for reading.
+
+## `Binding rows`
+
+`range` which column to read
+
+``` r
+fellowship_ring = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "B3:D6") |>
+  mutate(movie = "fellowship_ring")
+
+two_towers = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "F3:H6") |>
+  mutate(movie = "two_towers")
+
+return_king = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "J3:L6") |>
+  mutate(movie = "return_king")
+```
